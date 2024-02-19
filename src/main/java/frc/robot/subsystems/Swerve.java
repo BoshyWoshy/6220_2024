@@ -2,7 +2,7 @@ package frc.robot.subsystems;
 
 import frc.lib.util.TunableNumber;
 import frc.robot.Constants;
-import frc.robot.LimelightCalculations;
+// import frc.robot.LimelightCalculations;
 //import frc.robot.LimelightHelpers;
 import frc.robot.SwerveModule;
 import frc.robot.Constants.SwerveConstants;
@@ -54,13 +54,13 @@ public class Swerve extends SubsystemBase {
      * Standard deviations of model states. Increase these numbers to trust your model's state estimates less. This
      * matrix is in the form [x, y, theta]ᵀ, with units in meters and radians, then meters.
      */
-    private static final Vector<N3> stateStdDevs = VecBuilder.fill(0.05, 0.05, 0.1);
+    private static final Vector<N3> stateStdDevs = VecBuilder.fill(0.05, 0.05, 0);
     
     /**
      * Standard deviations of the vision measurements. Increase these numbers to trust global measurements from vision
      * less. This matrix is in the form [x, y, theta]ᵀ, with units in meters and radians.
      */
-    private static final Vector<N3> visionMeasurementStdDevs = VecBuilder.fill(1.5, 1.5, 1.5);
+    private static final Vector<N3> visionMeasurementStdDevs = VecBuilder.fill(1.5, 1.5, Double.MAX_VALUE);
 
 
     public SwerveModule[] mSwerveMods;
@@ -84,7 +84,7 @@ public class Swerve extends SubsystemBase {
     private final TunableNumber turnMaxVel = new TunableNumber("turn MaxVel", Constants.SwerveConstants.turnMaxVel);
     private final TunableNumber turnMaxAccel = new TunableNumber("turn Accel", Constants.SwerveConstants.turnMaxAccel);
 
-    public final TunableNumber visionMeasurementStdDevConstant = new TunableNumber("visionStdDev Constant", .1);
+    public TunableNumber visionMeasurementStdDevConstant = new TunableNumber("visionStdDev Constant", 10);
 
     private SwerveModulePosition[] positions = {
         new SwerveModulePosition(),
@@ -101,10 +101,10 @@ public class Swerve extends SubsystemBase {
 
 
         mSwerveMods = new SwerveModule[] {
-            new SwerveModule(0, SwerveConstants.Mod0.constants),
-            new SwerveModule(1, SwerveConstants.Mod1.constants),
-            new SwerveModule(2, SwerveConstants.Mod2.constants),
-            new SwerveModule(3, SwerveConstants.Mod3.constants)
+            new SwerveModule(0, SwerveConstants.Mod3.constants),
+            new SwerveModule(1, SwerveConstants.Mod2.constants),
+            new SwerveModule(2, SwerveConstants.Mod1.constants),
+            new SwerveModule(3, SwerveConstants.Mod0.constants)
         };
 
 
@@ -242,9 +242,36 @@ public class Swerve extends SubsystemBase {
         
         Pose2d currPose = getPose();
         Pose2d speakerPose = Constants.isRed ? VisionConstants.SPEAKER_POSE2D_RED : VisionConstants.SPEAKER_POSE2D_BLUE;
-        double angle = Math.toDegrees(Math.atan2(speakerPose.getY() - currPose.getY(), speakerPose.getX() - currPose.getX()));
-        angle += (Constants.isRed ? 0 : 180);
+        double angle = Math.toDegrees(Math.atan2(currPose.getY() - speakerPose.getY(), currPose.getX() - (speakerPose.getX())));
+        angle += (Constants.isRed ? 90 : -90);
+        
         return angle;
+    }
+
+    /**
+     * AKA get x value to amp as of map in pathplanner, forward/positvie is away from DRIVER'S POINT OF VIEW at BLUE SIDE
+     * @return the forward/backward/x distance from robot to amp
+     */
+    public double getForwardBackwardToAmp()
+    {
+        Pose2d currPose = getPose();
+        Pose2d ampPose = Constants.isRed ? VisionConstants.AMP_POSE2D_RED : VisionConstants.AMP_POSE2D_BLUE;
+        double xDistance = ampPose.getX(); // - currPose.getX() // I don't think we need this
+        SmartDashboard.putNumber("forward backward", xDistance);
+        return xDistance;
+    }
+
+    /**
+     * AKA get y value to amp as of map in pathplanner
+     * @return the left/right/y distance from robot to amp, right/negative is to the right side of the driver FROM THE BLUE SIDE
+     */
+    public double getLeftAndRightToAmp()
+    {
+        Pose2d currPose = getPose();
+        Pose2d ampPose = Constants.isRed ? VisionConstants.AMP_POSE2D_RED : VisionConstants.AMP_POSE2D_BLUE;
+        double yDistance = ampPose.getY() ; //- currPose.getY() // I don't think we need it
+        SmartDashboard.putNumber("left and right", yDistance);
+        return yDistance;
     }
 
     public double getHeadingDegrees()
@@ -356,20 +383,21 @@ public class Swerve extends SubsystemBase {
         }
 
         
-        //LimelightCalculations.updatePoseEstimation(poseEstimator, this);
+        // LimelightCalculations.updatePoseEstimation(poseEstimator, this);
         
         poseEstimator.update(getGyroYaw(), getModulePositions());
         field2d.setRobotPose(getPose());
         SmartDashboard.putString("getpose", getPose().toString());
         SmartDashboard.putString("getRobotPoseField 2d", field2d.getRobotPose().toString());
- 
-        // for(SwerveModule mod : mSwerveMods){
-        //     // SmartDashboard.putNumber("Mod " + mod.moduleNumber + " CANcoder", mod.getCANcoder().getDegrees());
-        //     SmartDashboard.putNumber("Mod " + mod.moduleNumber + " CANcoder", mod.getCANcoder().getDegrees());
-        //     SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Angle", mod.getPosition().angle.getDegrees());
-        //     SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Velocity", mod.getState().speedMetersPerSecond);  
-        //     SmartDashboard.putNumber("Mod " + mod.moduleNumber + "setAngle", mod.getDesiredState());
-        // }
+
+        /* 
+        for(SwerveModule mod : mSwerveMods){
+            // SmartDashboard.putNumber("Mod " + mod.moduleNumber + " CANcoder", mod.getCANcoder().getDegrees());
+            SmartDashboard.putNumber("Mod " + mod.moduleNumber + " CANcoder", mod.getCANcoder().getDegrees());
+            SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Angle", mod.getPosition().angle.getDegrees());
+            SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Velocity", mod.getState().speedMetersPerSecond);  
+            SmartDashboard.putNumber("Mod " + mod.moduleNumber + "setAngle", mod.getDesiredState());
+        }
         SmartDashboard.putNumber("Real Heading", getHeading().getDegrees());
         SmartDashboard.putNumber("Auto Turn Heading", autoTurnHeading);
         SmartDashboard.putNumber("Turn Controller Setpoint", turnPidController.getSetpoint().position);
@@ -383,5 +411,6 @@ public class Swerve extends SubsystemBase {
             turnPidController.setConstraints(new TrapezoidProfile.Constraints(turnMaxVel.get(), turnMaxAccel.get()));
             turnPidController.reset(getHeading().getDegrees());
         }
+        */
     }
 }
