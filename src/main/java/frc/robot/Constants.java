@@ -10,6 +10,7 @@ import java.util.Optional;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
+import com.pathplanner.lib.path.PathConstraints;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -210,12 +211,14 @@ public final class Constants {
     public static final class SwerveConstants {
         public static final int pigeonID = 1;
 
-        public static final double translation_kP = 2.518;
-        public static final double translation_kI = 0.6;
-        public static final double translation_kD = 0.0;
-        public static final double rotation_kP = 1.35;
-        public static final double rotation_kI = 1.25;
-        public static final double rotation_kD = 0.0;
+        public static final double translation_kP = 5;
+        public static final double translation_kI = 0.05;
+        public static final double translation_kD = 0;
+        public static final double rotation_kP = 0.45;
+        public static final double rotation_kI = 0;
+        public static final double rotation_kD = 0.05;
+        public static final double rotationMaxAccel = 120;
+        public static final double rotationMaxVel = 240;
 
         public static final COTSTalonFXSwerveConstants chosenModule = COTSTalonFXSwerveConstants.SDS.MK4i.Falcon500(COTSTalonFXSwerveConstants.SDS.MK4i.driveRatios.L2);
 
@@ -383,6 +386,8 @@ public final class Constants {
         public static final double kMaxAccelerationMetersPerSecondSquared = 3;
         public static final double kMaxAngularSpeedRadiansPerSecond = Math.PI;
         public static final double kMaxAngularSpeedRadiansPerSecondSquared = Math.PI;
+
+        public static final PathConstraints constraints = new PathConstraints(SwerveConstants.maxSpeed, 5, SwerveConstants.rotationMaxVel, SwerveConstants.rotationMaxAccel);
     
         public static final double kPXController = 1.5;
         public static final double kPYController = 1.5;

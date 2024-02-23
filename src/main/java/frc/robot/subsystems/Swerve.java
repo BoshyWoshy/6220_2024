@@ -14,9 +14,13 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 
 import com.kauailabs.navx.frc.AHRS;
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.path.GoalEndState;
+import com.pathplanner.lib.path.PathConstraints;
+import com.pathplanner.lib.path.PathPlannerPath;
 import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
 import com.pathplanner.lib.util.PIDConstants;
 import com.pathplanner.lib.util.PathPlannerLogging;
@@ -38,6 +42,8 @@ import edu.wpi.first.wpilibj.Timer;
 //import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj.shuffleboard.*;
 // import com.pathplanner.lib.*;
@@ -84,6 +90,14 @@ public class Swerve extends SubsystemBase {
     private final TunableNumber turnMaxVel = new TunableNumber("turn MaxVel", Constants.SwerveConstants.turnMaxVel);
     private final TunableNumber turnMaxAccel = new TunableNumber("turn Accel", Constants.SwerveConstants.turnMaxAccel);
 
+    private final TunableNumber autoRkP = new TunableNumber("auto R kP", Constants.SwerveConstants.rotation_kP);
+    private final TunableNumber autoRkI = new TunableNumber("auto R kI", Constants.SwerveConstants.rotation_kI);
+    private final TunableNumber autoRkD = new TunableNumber("auto R kD", Constants.SwerveConstants.rotation_kD);
+
+    private final TunableNumber autoTkP = new TunableNumber("auto T kP", Constants.SwerveConstants.translation_kP);
+    private final TunableNumber autoTkI = new TunableNumber("auto T kI", Constants.SwerveConstants.translation_kI);
+    private final TunableNumber autoTkD = new TunableNumber("auto T kD", Constants.SwerveConstants.translation_kD);
+    
     public TunableNumber visionMeasurementStdDevConstant = new TunableNumber("visionStdDev Constant", 10);
 
     private SwerveModulePosition[] positions = {
@@ -101,10 +115,10 @@ public class Swerve extends SubsystemBase {
 
 
         mSwerveMods = new SwerveModule[] {
-            new SwerveModule(0, SwerveConstants.Mod3.constants),
-            new SwerveModule(1, SwerveConstants.Mod2.constants),
-            new SwerveModule(2, SwerveConstants.Mod1.constants),
-            new SwerveModule(3, SwerveConstants.Mod0.constants)
+            new SwerveModule(0, SwerveConstants.Mod0.constants),
+            new SwerveModule(1, SwerveConstants.Mod1.constants),
+            new SwerveModule(2, SwerveConstants.Mod2.constants),
+            new SwerveModule(3, SwerveConstants.Mod3.constants)
         };
 
 
@@ -117,8 +131,8 @@ public class Swerve extends SubsystemBase {
         this::getRobotRelativeSpeeds, // ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
         this::driveRobotRelative, // Method that will drive the robot given ROBOT RELATIVE ChassisSpeeds
         new HolonomicPathFollowerConfig( // HolonomicPathFollowerConfig, this should likely live in your Constants class
-                new PIDConstants(SwerveConstants.translation_kP, SwerveConstants.translation_kI, SwerveConstants.translation_kD), // Translation PID constants
-                new PIDConstants(SwerveConstants.rotation_kP, SwerveConstants.rotation_kI, SwerveConstants.rotation_kD), // Rotation PID constants
+                new PIDConstants(autoRkP.get(), autoRkI.get(), autoRkD.get()), // Translation PID constants
+                new PIDConstants(autoTkP.get(), autoTkI.get(), autoTkD.get()), // Rotation PID constants
                 4.5, // Max module speed, in m/s
                 0.4, // Drive base radius in meters. Distance from robot center to furthest module.
                 new ReplanningConfig() // Default path replanning config. See the API for the options here
@@ -389,8 +403,7 @@ public class Swerve extends SubsystemBase {
         field2d.setRobotPose(getPose());
         SmartDashboard.putString("getpose", getPose().toString());
         SmartDashboard.putString("getRobotPoseField 2d", field2d.getRobotPose().toString());
-
-        /* 
+ 
         for(SwerveModule mod : mSwerveMods){
             // SmartDashboard.putNumber("Mod " + mod.moduleNumber + " CANcoder", mod.getCANcoder().getDegrees());
             SmartDashboard.putNumber("Mod " + mod.moduleNumber + " CANcoder", mod.getCANcoder().getDegrees());
@@ -411,6 +424,5 @@ public class Swerve extends SubsystemBase {
             turnPidController.setConstraints(new TrapezoidProfile.Constraints(turnMaxVel.get(), turnMaxAccel.get()));
             turnPidController.reset(getHeading().getDegrees());
         }
-        */
     }
 }
